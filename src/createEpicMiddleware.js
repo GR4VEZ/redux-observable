@@ -1,5 +1,4 @@
 import { Subject } from 'rxjs/Subject';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { from } from 'rxjs/observable/from';
 import { switchMap } from 'rxjs/operator/switchMap';
 import { ActionsObservable } from './ActionsObservable';
@@ -19,7 +18,7 @@ export function createEpicMiddleware(epic, { adapter = defaultAdapter } = defaul
   const action$ = adapter.input(
     new ActionsObservable(input$)
   );
-  const epic$ = new BehaviorSubject(epic);
+  const epic$ = new Subject();
   let store;
 
   const epicMiddleware = _store => {
@@ -29,6 +28,9 @@ export function createEpicMiddleware(epic, { adapter = defaultAdapter } = defaul
       if (typeof epic === 'function') {
         epic$::switchMap(epic => adapter.output(epic(action$, store)))
           .subscribe(store.dispatch);
+
+        // Setup initial root epic
+        epic$.next(epic);
       }
 
       return action => {
